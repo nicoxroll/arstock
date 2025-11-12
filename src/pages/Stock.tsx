@@ -50,21 +50,26 @@ const Stock = () => {
     },
   ]);
 
-  const [modalOpen, setModalOpen] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState('table'); // 'table' or 'grid'
   const [selectedItem, setSelectedItem] = useState(null);
-  const [editingKey, setEditingKey] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [form] = Form.useForm();
 
   const handleAddItem = () => {
-    setEditingKey(null);
+    setSelectedItem(null);
+    setIsEditing(true);
     form.resetFields();
-    setModalOpen(true);
+    setViewModalOpen(true);
   };
 
-  const handleEditItem = (item) => {
-    setEditingKey(item.key);
+  const handleEditItem = () => {
+    setIsEditing(true);
+  };
+
+  const handleViewItem = (item) => {
+    setSelectedItem(item);
+    setIsEditing(false);
     form.setFieldsValue({
       producto: item.producto,
       sku: item.sku,
@@ -74,11 +79,6 @@ const Stock = () => {
       precio: item.precio,
       imagen: item.imagen,
     });
-    setModalOpen(true);
-  };
-
-  const handleViewItem = (item) => {
-    setSelectedItem(item);
     setViewModalOpen(true);
   };
 
@@ -97,17 +97,20 @@ const Stock = () => {
   };
 
   const handleSaveItem = (values) => {
-    if (editingKey) {
+    if (selectedItem) {
+      // Editar producto existente
       setData(data.map(item =>
-        item.key === editingKey
+        item.key === selectedItem.key
           ? { ...item, ...values }
           : item
       ));
     } else {
+      // Agregar nuevo producto
       setData([...data, { key: Date.now().toString(), ...values }]);
     }
-    setEditingKey(null);
-    setModalOpen(false);
+    setViewModalOpen(false);
+    setSelectedItem(null);
+    setIsEditing(false);
     form.resetFields();
   };
 
@@ -187,15 +190,6 @@ const Stock = () => {
       key: 'acciones',
       render: (_, record) => (
         <Space>
-          <Button
-            type="text"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleEditItem(record);
-            }}
-          />
           <Button
             type="text"
             size="small"
@@ -323,189 +317,232 @@ const Stock = () => {
 
       {/* Modal de Vista */}
       <Modal
-        title="Detalle del Producto"
+        title={selectedItem ? (isEditing ? 'Editar Producto' : 'Detalle del Producto') : 'Agregar Producto'}
         open={viewModalOpen}
-        onCancel={() => setViewModalOpen(false)}
-        footer={[
-          <Button 
-            key="delete" 
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => {
-              setViewModalOpen(false);
-              handleDeleteItem(selectedItem.key);
-            }}
-          >
-            Eliminar
-          </Button>,
-          <Button key="close" onClick={() => setViewModalOpen(false)}>
-            Cerrar
-          </Button>,
-          <Button 
-            key="edit" 
-            type="primary" 
-            icon={<EditOutlined />}
-            onClick={() => {
-              setViewModalOpen(false);
-              handleEditItem(selectedItem);
-            }}
-          >
-            Editar
-          </Button>
-        ]}
-        width={600}
-      >
-        {selectedItem && (
-          <div>
-            {selectedItem.imagen && (
-              <div style={{ marginBottom: 16, textAlign: 'center' }}>
-                <Image 
-                  src={selectedItem.imagen} 
-                  alt={selectedItem.producto}
-                  style={{
-                    maxWidth: '100%',
-                    maxHeight: 300,
-                    objectFit: 'contain',
-                    borderRadius: 8
-                  }}
-                />
-              </div>
-            )}
-            <Descriptions bordered column={1}>
-              <Descriptions.Item label="Producto">{selectedItem.producto}</Descriptions.Item>
-              <Descriptions.Item label="SKU">{selectedItem.sku}</Descriptions.Item>
-              <Descriptions.Item label="Categoría">{selectedItem.categoria}</Descriptions.Item>
-              <Descriptions.Item label="Precio">${selectedItem.precio.toLocaleString()}</Descriptions.Item>
-              <Descriptions.Item label="Cantidad">{selectedItem.cantidad}</Descriptions.Item>
-              <Descriptions.Item label="Estado">
-                <Tag color={
-                  selectedItem.estado === 'Disponible' ? 'green' : 
-                  selectedItem.estado === 'Bajo' ? 'orange' : 'red'
-                }>
-                  {selectedItem.estado}
-                </Tag>
-              </Descriptions.Item>
-            </Descriptions>
-          </div>
-        )}
-      </Modal>
-
-      {/* Modal de Edición/Agregar */}
-      <Modal
-        title={editingKey ? 'Editar Producto' : 'Agregar Producto'}
-        open={modalOpen}
         onCancel={() => {
-          setModalOpen(false);
-          setEditingKey(null);
+          setViewModalOpen(false);
+          setSelectedItem(null);
+          setIsEditing(false);
           form.resetFields();
         }}
-        okText="Guardar"
-        cancelText="Cancelar"
-        onOk={() => form.submit()}
-        width={700}
+        footer={
+          isEditing ? [
+            <Button key="cancel" onClick={() => {
+              if (selectedItem) {
+                setIsEditing(false);
+                form.setFieldsValue({
+                  producto: selectedItem.producto,
+                  sku: selectedItem.sku,
+                  cantidad: selectedItem.cantidad,
+                  estado: selectedItem.estado,
+                  categoria: selectedItem.categoria,
+                  precio: selectedItem.precio,
+                  imagen: selectedItem.imagen,
+                });
+              } else {
+                setViewModalOpen(false);
+                form.resetFields();
+              }
+            }}>
+              Cancelar
+            </Button>,
+            <Button key="save" type="primary" onClick={() => form.submit()}>
+              Guardar
+            </Button>,
+          ] : [
+            <Button 
+              key="delete" 
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => {
+                setViewModalOpen(false);
+                handleDeleteItem(selectedItem.key);
+              }}
+            >
+              Eliminar
+            </Button>,
+            <Button key="close" onClick={() => setViewModalOpen(false)}>
+              Cerrar
+            </Button>,
+            <Button 
+              key="edit" 
+              type="primary" 
+              icon={<EditOutlined />}
+              onClick={handleEditItem}
+            >
+              Editar
+            </Button>
+          ]
+        }
+        width={600}
       >
         <Form
           form={form}
           layout="vertical"
           onFinish={handleSaveItem}
         >
-          <Form.Item
-            name="producto"
-            label="Nombre del Producto"
-            rules={[{ required: true, message: 'Por favor ingrese el nombre' }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="sku"
-            label="SKU"
-            rules={[{ required: true, message: 'Por favor ingrese el SKU' }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="categoria"
-            label="Categoría"
-            rules={[{ required: true, message: 'Por favor ingrese la categoría' }]}
-          >
-            <Select options={[
-              { label: 'Computadoras', value: 'Computadoras' },
-              { label: 'Periféricos', value: 'Periféricos' },
-              { label: 'Monitores', value: 'Monitores' },
-              { label: 'Accesorios', value: 'Accesorios' },
-              { label: 'Componentes', value: 'Componentes' },
-            ]} />
-          </Form.Item>
-          <Form.Item
-            name="precio"
-            label="Precio"
-            rules={[{ required: true, message: 'Por favor ingrese el precio' }]}
-          >
-            <InputNumber min={0} style={{ width: '100%' }} prefix="$" />
-          </Form.Item>
-          <Form.Item
-            name="cantidad"
-            label="Cantidad"
-            rules={[{ required: true, message: 'Por favor ingrese la cantidad' }]}
-          >
-            <InputNumber min={0} />
-          </Form.Item>
-          <Form.Item
-            name="estado"
-            label="Estado"
-            rules={[{ required: true, message: 'Por favor seleccione el estado' }]}
-          >
-            <Select options={[
-              { label: 'Disponible', value: 'Disponible' },
-              { label: 'Bajo', value: 'Bajo' },
-              { label: 'Crítico', value: 'Crítico' },
-            ]} />
-          </Form.Item>
-          <Form.Item
-            name="imagen"
-            label="URL de la Imagen"
-            rules={[
-              { 
-                pattern: /^https?:\/\/.+/, 
-                message: 'Por favor ingrese una URL válida (comenzando con http:// o https://)' 
-              }
-            ]}
-          >
-            <Input placeholder="https://ejemplo.com/imagen.jpg" />
-          </Form.Item>
+          {selectedItem?.imagen && !isEditing && (
+            <div style={{ marginBottom: 16, textAlign: 'center' }}>
+              <Image 
+                src={selectedItem.imagen} 
+                alt={selectedItem.producto}
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: 300,
+                  objectFit: 'contain',
+                  borderRadius: 8
+                }}
+              />
+            </div>
+          )}
+          <Descriptions bordered column={1}>
+            <Descriptions.Item label="Producto">
+              {isEditing ? (
+                <Form.Item
+                  name="producto"
+                  rules={[{ required: true, message: 'Por favor ingrese el nombre' }]}
+                  style={{ marginBottom: 0 }}
+                >
+                  <Input />
+                </Form.Item>
+              ) : (
+                selectedItem?.producto || '-'
+              )}
+            </Descriptions.Item>
+            <Descriptions.Item label="SKU">
+              {isEditing ? (
+                <Form.Item
+                  name="sku"
+                  rules={[{ required: true, message: 'Por favor ingrese el SKU' }]}
+                  style={{ marginBottom: 0 }}
+                >
+                  <Input />
+                </Form.Item>
+              ) : (
+                selectedItem?.sku || '-'
+              )}
+            </Descriptions.Item>
+            <Descriptions.Item label="Categoría">
+              {isEditing ? (
+                <Form.Item
+                  name="categoria"
+                  rules={[{ required: true, message: 'Por favor ingrese la categoría' }]}
+                  style={{ marginBottom: 0 }}
+                >
+                  <Select options={[
+                    { label: 'Computadoras', value: 'Computadoras' },
+                    { label: 'Periféricos', value: 'Periféricos' },
+                    { label: 'Monitores', value: 'Monitores' },
+                    { label: 'Accesorios', value: 'Accesorios' },
+                    { label: 'Componentes', value: 'Componentes' },
+                  ]} />
+                </Form.Item>
+              ) : (
+                selectedItem?.categoria || '-'
+              )}
+            </Descriptions.Item>
+            <Descriptions.Item label="Precio">
+              {isEditing ? (
+                <Form.Item
+                  name="precio"
+                  rules={[{ required: true, message: 'Por favor ingrese el precio' }]}
+                  style={{ marginBottom: 0 }}
+                >
+                  <InputNumber min={0} style={{ width: '100%' }} prefix="$" />
+                </Form.Item>
+              ) : (
+                selectedItem ? `$${selectedItem.precio.toLocaleString()}` : '-'
+              )}
+            </Descriptions.Item>
+            <Descriptions.Item label="Cantidad">
+              {isEditing ? (
+                <Form.Item
+                  name="cantidad"
+                  rules={[{ required: true, message: 'Por favor ingrese la cantidad' }]}
+                  style={{ marginBottom: 0 }}
+                >
+                  <InputNumber min={0} style={{ width: '100%' }} />
+                </Form.Item>
+              ) : (
+                selectedItem?.cantidad || '-'
+              )}
+            </Descriptions.Item>
+            <Descriptions.Item label="Estado">
+              {isEditing ? (
+                <Form.Item
+                  name="estado"
+                  rules={[{ required: true, message: 'Por favor seleccione el estado' }]}
+                  style={{ marginBottom: 0 }}
+                >
+                  <Select options={[
+                    { label: 'Disponible', value: 'Disponible' },
+                    { label: 'Bajo', value: 'Bajo' },
+                    { label: 'Crítico', value: 'Crítico' },
+                  ]} />
+                </Form.Item>
+              ) : (
+                selectedItem && (
+                  <Tag color={
+                    selectedItem.estado === 'Disponible' ? 'green' : 
+                    selectedItem.estado === 'Bajo' ? 'orange' : 'red'
+                  }>
+                    {selectedItem.estado}
+                  </Tag>
+                )
+              )}
+            </Descriptions.Item>
+            {isEditing && (
+              <Descriptions.Item label="URL de la Imagen">
+                <Form.Item
+                  name="imagen"
+                  rules={[
+                    { 
+                      pattern: /^https?:\/\/.+/, 
+                      message: 'Por favor ingrese una URL válida' 
+                    }
+                  ]}
+                  style={{ marginBottom: 0 }}
+                >
+                  <Input placeholder="https://ejemplo.com/imagen.jpg" />
+                </Form.Item>
+              </Descriptions.Item>
+            )}
+          </Descriptions>
           
-          <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => prevValues.imagen !== currentValues.imagen}>
-            {({ getFieldValue }) => 
-              getFieldValue('imagen') ? (
-                <div style={{ 
-                  marginTop: 16, 
-                  padding: '12px', 
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f5f5f5', 
-                  borderRadius: 8,
-                  border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : 'none'
-                }}>
+          {isEditing && (
+            <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => prevValues.imagen !== currentValues.imagen}>
+              {({ getFieldValue }) => 
+                getFieldValue('imagen') ? (
                   <div style={{ 
-                    fontSize: 12, 
-                    color: isDark ? 'rgba(255, 255, 255, 0.65)' : '#666', 
-                    marginBottom: 8 
+                    marginTop: 16, 
+                    padding: '12px', 
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f5f5f5', 
+                    borderRadius: 8,
+                    border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : 'none'
                   }}>
-                    Vista previa de la imagen:
+                    <div style={{ 
+                      fontSize: 12, 
+                      color: isDark ? 'rgba(255, 255, 255, 0.65)' : '#666', 
+                      marginBottom: 8 
+                    }}>
+                      Vista previa de la imagen:
+                    </div>
+                    <Image 
+                      src={getFieldValue('imagen')} 
+                      alt="preview"
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: 200,
+                        borderRadius: 4,
+                        objectFit: 'contain',
+                        backgroundColor: isDark ? 'rgba(0, 0, 0, 0.2)' : '#fff'
+                      }}
+                    />
                   </div>
-                  <Image 
-                    src={getFieldValue('imagen')} 
-                    alt="preview"
-                    style={{
-                      maxWidth: '100%',
-                      maxHeight: 200,
-                      borderRadius: 4,
-                      objectFit: 'contain',
-                      backgroundColor: isDark ? 'rgba(0, 0, 0, 0.2)' : '#fff'
-                    }}
-                  />
-                </div>
-              ) : null
-            }
-          </Form.Item>
+                ) : null
+              }
+            </Form.Item>
+          )}
         </Form>
       </Modal>
     </div>

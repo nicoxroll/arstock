@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Card, Row, Col, Statistic, Typography, Tag, Breadcrumb, Button, Modal, Form, Input, Space } from 'antd';
-import { DollarOutlined, RiseOutlined, InboxOutlined, PlusOutlined, EditOutlined, DeleteOutlined, ArrowRightOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Statistic, Typography, Tag, Breadcrumb, Button, Modal, Form, Input, Space, Select, Descriptions } from 'antd';
+import { DollarOutlined, RiseOutlined, InboxOutlined, PlusOutlined, EditOutlined, DeleteOutlined, ArrowRightOutlined, EyeOutlined } from '@ant-design/icons';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, ResponsiveContainer } from 'recharts';
 import { useLocation } from '../context/LocationContext';
 
@@ -25,39 +25,71 @@ const Overview = () => {
     { id: '2', name: 'María García' },
     { id: '3', name: 'Carlos López' },
   ]);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  
+  // Lista de administradores disponibles para agregar
+  const availableAdmins = [
+    'Ana Martínez',
+    'Roberto Sánchez',
+    'Laura Fernández',
+    'Diego Romero',
+    'Sofía González',
+    'Miguel Torres',
+    'Valentina Ruiz',
+    'Mateo Silva',
+  ];
+  
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [form] = Form.useForm();
 
   // Obtener la imagen hero del local actual (usa la primera del mapa si no existe)
   const heroImage = LOCAL_HEROES[selectedLocation.id] || Object.values(LOCAL_HEROES)[0];
 
   const handleAddAdmin = () => {
-    setEditingId(null);
+    setSelectedAdmin(null);
+    setIsEditing(true);
     form.resetFields();
-    setModalOpen(true);
+    setViewModalOpen(true);
   };
 
-  const handleEditAdmin = (admin: Admin) => {
-    setEditingId(admin.id);
+  const handleViewAdmin = (admin) => {
+    setSelectedAdmin(admin);
+    setIsEditing(false);
     form.setFieldsValue({ name: admin.name });
-    setModalOpen(true);
+    setViewModalOpen(true);
   };
 
-  const handleDeleteAdmin = (id: string) => {
+  const handleEditAdmin = () => {
+    setIsEditing(true);
+  };
+
+  const handleDeleteAdmin = (id) => {
     setAdmins(admins.filter(admin => admin.id !== id));
+    setViewModalOpen(false);
   };
 
-  const handleSaveAdmin = (values: { name: string }) => {
-    if (editingId) {
+  const handleSaveAdmin = (values) => {
+    if (selectedAdmin) {
+      // Editar administrador existente
       setAdmins(admins.map(admin =>
-        admin.id === editingId ? { ...admin, name: values.name } : admin
+        admin.id === selectedAdmin.id ? { ...admin, name: values.name } : admin
       ));
     } else {
+      // Agregar nuevo administrador
       setAdmins([...admins, { id: Date.now().toString(), name: values.name }]);
     }
-    setModalOpen(false);
+    setViewModalOpen(false);
     form.resetFields();
+    setSelectedAdmin(null);
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setViewModalOpen(false);
+    form.resetFields();
+    setSelectedAdmin(null);
+    setIsEditing(false);
   };
 
   return (
@@ -292,14 +324,14 @@ const Overview = () => {
                   <Tag color="blue">{admin.name}</Tag>
                   <Space>
                     <Button
-                      type="text"
+                      type="link"
                       size="small"
-                      icon={<EditOutlined />}
-                      onClick={() => handleEditAdmin(admin)}
+                      icon={<EyeOutlined />}
+                      onClick={() => handleViewAdmin(admin)}
                       style={{ transition: 'all 0.2s ease' }}
                     />
                     <Button
-                      type="text"
+                      type="link"
                       size="small"
                       danger
                       icon={<DeleteOutlined />}
@@ -315,24 +347,72 @@ const Overview = () => {
       </Row>
 
       <Modal
-        title={editingId ? 'Editar Administrador' : 'Agregar Administrador'}
-        open={modalOpen}
-        onCancel={() => setModalOpen(false)}
-        onOk={() => form.submit()}
-        style={{ animation: 'fadeIn 0.3s ease' }}
+        title={selectedAdmin ? (isEditing ? 'Editar Administrador' : 'Detalle de Administrador') : 'Agregar Administrador'}
+        open={viewModalOpen}
+        onCancel={handleCancelEdit}
+        footer={
+          isEditing ? [
+            <Button key="cancel" onClick={() => {
+              if (selectedAdmin) {
+                setIsEditing(false);
+                form.setFieldsValue({ name: selectedAdmin.name });
+              } else {
+                handleCancelEdit();
+              }
+            }}>
+              Cancelar
+            </Button>,
+            <Button key="save" type="primary" onClick={() => form.submit()}>
+              Guardar
+            </Button>,
+          ] : [
+            <Button key="delete" danger icon={<DeleteOutlined />} onClick={() => {
+              if (selectedAdmin) {
+                handleDeleteAdmin(selectedAdmin.id);
+              }
+            }}>
+              Eliminar
+            </Button>,
+            <Button key="close" onClick={handleCancelEdit}>
+              Cerrar
+            </Button>,
+            <Button key="edit" type="primary" icon={<EditOutlined />} onClick={handleEditAdmin}>
+              Editar
+            </Button>,
+          ]
+        }
       >
         <Form
           form={form}
           layout="vertical"
           onFinish={handleSaveAdmin}
         >
-          <Form.Item
-            name="name"
-            label="Nombre del Administrador"
-            rules={[{ required: true, message: 'Por favor ingrese el nombre' }]}
-          >
-            <Input />
-          </Form.Item>
+          <Descriptions bordered column={1}>
+            <Descriptions.Item label="ID">
+              {selectedAdmin ? selectedAdmin.id : '-'}
+            </Descriptions.Item>
+            <Descriptions.Item label="Nombre">
+              {isEditing ? (
+                <Form.Item
+                  name="name"
+                  rules={[{ required: true, message: 'Por favor ingrese el nombre' }]}
+                  style={{ marginBottom: 0 }}
+                >
+                  {selectedAdmin ? (
+                    <Input />
+                  ) : (
+                    <Select
+                      showSearch
+                      placeholder="Seleccione un administrador"
+                      options={availableAdmins.map(name => ({ label: name, value: name }))}
+                    />
+                  )}
+                </Form.Item>
+              ) : (
+                selectedAdmin?.name || '-'
+              )}
+            </Descriptions.Item>
+          </Descriptions>
         </Form>
       </Modal>
     </div>

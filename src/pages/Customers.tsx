@@ -16,32 +16,32 @@ const Customers = () => {
     { key: '8', nombre: 'Camila Morales', email: 'camila.m@email.com', ultimaCompra: '2024-02-04', totalGastado: 98000 },
   ]);
 
-  const [modalOpen, setModalOpen] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [editingKey, setEditingKey] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [form] = Form.useForm();
 
   const handleAddItem = () => {
-    setEditingKey(null);
+    setSelectedItem(null);
+    setIsEditing(true);
     form.resetFields();
-    setModalOpen(true);
+    setViewModalOpen(true);
   };
 
   const handleViewItem = (item) => {
     setSelectedItem(item);
-    setViewModalOpen(true);
-  };
-
-  const handleEditItem = (item) => {
-    setEditingKey(item.key);
+    setIsEditing(false);
     form.setFieldsValue({
       nombre: item.nombre,
       email: item.email,
       ultimaCompra: item.ultimaCompra,
       totalGastado: item.totalGastado,
     });
-    setModalOpen(true);
+    setViewModalOpen(true);
+  };
+
+  const handleEditItem = () => {
+    setIsEditing(true);
   };
 
   const handleDeleteItem = (key) => {
@@ -54,21 +54,24 @@ const Customers = () => {
       cancelText: 'Cancelar',
       onOk() {
         setData(data.filter(item => item.key !== key));
+        setViewModalOpen(false);
       },
     });
   };
 
   const handleSaveItem = (values) => {
-    if (editingKey) {
+    if (selectedItem) {
       setData(data.map(item =>
-        item.key === editingKey
+        item.key === selectedItem.key
           ? { ...item, ...values }
           : item
       ));
     } else {
       setData([...data, { key: Date.now().toString(), ...values }]);
     }
-    setModalOpen(false);
+    setViewModalOpen(false);
+    setSelectedItem(null);
+    setIsEditing(false);
     form.resetFields();
   };
 
@@ -100,15 +103,6 @@ const Customers = () => {
       key: 'acciones',
       render: (_, record) => (
         <Space>
-          <Button
-            type="text"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleEditItem(record);
-            }}
-          />
           <Button
             type="text"
             size="small"
@@ -157,87 +151,118 @@ const Customers = () => {
       </div>
 
       <Modal
-        title={editingKey ? 'Editar Cliente' : 'Nuevo Cliente'}
-        open={modalOpen}
-        onCancel={() => setModalOpen(false)}
-        onOk={() => form.submit()}
+        title={selectedItem ? (isEditing ? 'Editar Cliente' : 'Detalle de Cliente') : 'Agregar Cliente'}
+        open={viewModalOpen}
+        onCancel={() => {
+          setViewModalOpen(false);
+          setSelectedItem(null);
+          setIsEditing(false);
+          form.resetFields();
+        }}
+        footer={
+          isEditing ? [
+            <Button key="cancel" onClick={() => {
+              if (selectedItem) {
+                setIsEditing(false);
+                form.setFieldsValue({
+                  nombre: selectedItem.nombre,
+                  email: selectedItem.email,
+                  ultimaCompra: selectedItem.ultimaCompra,
+                  totalGastado: selectedItem.totalGastado,
+                });
+              } else {
+                setViewModalOpen(false);
+                form.resetFields();
+              }
+            }}>
+              Cancelar
+            </Button>,
+            <Button key="save" type="primary" onClick={() => form.submit()}>
+              Guardar
+            </Button>,
+          ] : [
+            <Button 
+              key="delete" 
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDeleteItem(selectedItem.key)}
+            >
+              Eliminar
+            </Button>,
+            <Button key="close" onClick={() => setViewModalOpen(false)}>
+              Cerrar
+            </Button>,
+            <Button 
+              key="edit" 
+              type="primary"
+              icon={<EditOutlined />}
+              onClick={handleEditItem}
+            >
+              Editar
+            </Button>
+          ]
+        }
       >
         <Form
           form={form}
           layout="vertical"
           onFinish={handleSaveItem}
         >
-          <Form.Item
-            name="nombre"
-            label="Nombre del Cliente"
-            rules={[{ required: true, message: 'Por favor ingrese el nombre' }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="email"
-            label="Email"
-            rules={[{ required: true, message: 'Por favor ingrese el email' }]}
-          >
-            <Input type="email" />
-          </Form.Item>
-          <Form.Item
-            name="ultimaCompra"
-            label="Última Compra"
-            rules={[{ required: true, message: 'Por favor ingrese la fecha' }]}
-          >
-            <Input type="date" />
-          </Form.Item>
-          <Form.Item
-            name="totalGastado"
-            label="Total Gastado"
-            rules={[{ required: true, message: 'Por favor ingrese el total' }]}
-          >
-            <InputNumber min={0} />
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      <Modal
-        title="Detalle de Cliente"
-        open={viewModalOpen}
-        onCancel={() => setViewModalOpen(false)}
-        footer={[
-          <Button 
-            key="delete" 
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => {
-              setViewModalOpen(false);
-              handleDeleteItem(selectedItem.key);
-            }}
-          >
-            Eliminar
-          </Button>,
-          <Button key="close" onClick={() => setViewModalOpen(false)}>
-            Cerrar
-          </Button>,
-          <Button 
-            key="edit" 
-            type="primary"
-            icon={<EditOutlined />}
-            onClick={() => {
-              setViewModalOpen(false);
-              handleEditItem(selectedItem);
-            }}
-          >
-            Editar
-          </Button>
-        ]}
-      >
-        {selectedItem && (
           <Descriptions bordered column={1}>
-            <Descriptions.Item label="Nombre">{selectedItem.nombre}</Descriptions.Item>
-            <Descriptions.Item label="Email">{selectedItem.email}</Descriptions.Item>
-            <Descriptions.Item label="Última Compra">{selectedItem.ultimaCompra}</Descriptions.Item>
-            <Descriptions.Item label="Total Gastado">${selectedItem.totalGastado.toLocaleString()}</Descriptions.Item>
+            <Descriptions.Item label="Nombre">
+              {isEditing ? (
+                <Form.Item
+                  name="nombre"
+                  rules={[{ required: true, message: 'Por favor ingrese el nombre' }]}
+                  style={{ marginBottom: 0 }}
+                >
+                  <Input />
+                </Form.Item>
+              ) : (
+                selectedItem?.nombre || '-'
+              )}
+            </Descriptions.Item>
+            <Descriptions.Item label="Email">
+              {isEditing ? (
+                <Form.Item
+                  name="email"
+                  rules={[{ required: true, message: 'Por favor ingrese el email' }]}
+                  style={{ marginBottom: 0 }}
+                >
+                  <Input type="email" />
+                </Form.Item>
+              ) : (
+                selectedItem?.email || '-'
+              )}
+            </Descriptions.Item>
+            <Descriptions.Item label="Última Compra">
+              {isEditing ? (
+                <Form.Item
+                  name="ultimaCompra"
+                  rules={[{ required: true, message: 'Por favor ingrese la fecha' }]}
+                  style={{ marginBottom: 0 }}
+                >
+                  <Input type="date" />
+                </Form.Item>
+              ) : (
+                selectedItem?.ultimaCompra || '-'
+              )}
+            </Descriptions.Item>
+            <Descriptions.Item label="Total Gastado">
+              {isEditing ? (
+                <Form.Item
+                  name="totalGastado"
+                  rules={[{ required: true, message: 'Por favor ingrese el total' }]}
+                  style={{ marginBottom: 0 }}
+                >
+                  <InputNumber min={0} style={{ width: '100%' }} prefix="$" />
+                </Form.Item>
+              ) : (
+                selectedItem ? `$${selectedItem.totalGastado.toLocaleString()}` : '-'
+              )}
+            </Descriptions.Item>
           </Descriptions>
-        )}
+        </Form>
       </Modal>
     </div>
   );
