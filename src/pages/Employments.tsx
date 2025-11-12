@@ -1,20 +1,11 @@
-import { useState, useCallback } from 'react';
-import { Table, Typography, Tag, Button, Modal, Form, Input, Select, Space, Row, Col } from 'antd';
-import type { ColumnsType } from 'antd/es/table';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { useState } from 'react';
+import { Table, Typography, Tag, Button, Modal, Form, Input, Select, Space, Row, Col, Descriptions } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 
 const { Title, Paragraph } = Typography;
 
-interface EmploymentItem {
-  key: string;
-  nombre: string;
-  puesto: string;
-  email: string;
-  estado: string;
-}
-
 const Employments = () => {
-  const [data, setData] = useState<EmploymentItem[]>([
+  const [data, setData] = useState([
     { key: '1', nombre: 'Juan Pérez', puesto: 'Gerente', email: 'juan.perez@arstock.com', estado: 'Activo' },
     { key: '2', nombre: 'María García', puesto: 'Vendedora', email: 'maria.garcia@arstock.com', estado: 'Activo' },
     { key: '3', nombre: 'Carlos López', puesto: 'Encargado de Stock', email: 'carlos.lopez@arstock.com', estado: 'Activo' },
@@ -25,16 +16,23 @@ const Employments = () => {
   ]);
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [editingKey, setEditingKey] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null);
   const [form] = Form.useForm();
 
-  const handleAddItem = useCallback(() => {
+  const handleAddItem = () => {
     setEditingKey(null);
     form.resetFields();
     setModalOpen(true);
-  }, [form]);
+  };
 
-  const handleEditItem = useCallback((item: EmploymentItem) => {
+  const handleViewItem = (item) => {
+    setSelectedItem(item);
+    setViewModalOpen(true);
+  };
+
+  const handleEditItem = (item) => {
     setEditingKey(item.key);
     form.setFieldsValue({
       nombre: item.nombre,
@@ -43,13 +41,23 @@ const Employments = () => {
       estado: item.estado,
     });
     setModalOpen(true);
-  }, [form]);
+  };
 
-  const handleDeleteItem = useCallback((key: string) => {
-    setData(data.filter(item => item.key !== key));
-  }, [data]);
+  const handleDeleteItem = (key) => {
+    Modal.confirm({
+      title: '¿Está seguro de eliminar este empleado?',
+      icon: <ExclamationCircleOutlined />,
+      content: 'Esta acción no se puede deshacer.',
+      okText: 'Eliminar',
+      okType: 'danger',
+      cancelText: 'Cancelar',
+      onOk() {
+        setData(data.filter(item => item.key !== key));
+      },
+    });
+  };
 
-  const handleSaveItem = useCallback((values: any) => {
+  const handleSaveItem = (values) => {
     if (editingKey) {
       setData(data.map(item =>
         item.key === editingKey
@@ -61,9 +69,9 @@ const Employments = () => {
     }
     setModalOpen(false);
     form.resetFields();
-  }, [editingKey, data, form]);
+  };
 
-  const columns: ColumnsType<EmploymentItem> = [
+  const columns = [
     {
       title: 'Nombre',
       dataIndex: 'nombre',
@@ -83,7 +91,7 @@ const Employments = () => {
       title: 'Estado',
       dataIndex: 'estado',
       key: 'estado',
-      render: (estado: string) => {
+      render: (estado) => {
         const color = estado === 'Activo' ? 'green' : estado === 'Vacaciones' ? 'blue' : 'red';
         return <Tag color={color}>{estado}</Tag>;
       },
@@ -91,20 +99,26 @@ const Employments = () => {
     {
       title: 'Acciones',
       key: 'acciones',
-      render: (_: any, record: EmploymentItem) => (
+      render: (_, record) => (
         <Space>
           <Button
             type="text"
             size="small"
             icon={<EditOutlined />}
-            onClick={() => handleEditItem(record)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEditItem(record);
+            }}
           />
           <Button
             type="text"
             size="small"
             danger
             icon={<DeleteOutlined />}
-            onClick={() => handleDeleteItem(record.key)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteItem(record.key);
+            }}
           />
         </Space>
       ),
@@ -136,6 +150,10 @@ const Employments = () => {
           dataSource={data}
           pagination={{ pageSize: 10 }}
           scroll={{ x: 800 }}
+          onRow={(record) => ({
+            onClick: () => handleViewItem(record),
+            style: { cursor: 'pointer' }
+          })}
         />
       </div>
 
@@ -183,6 +201,52 @@ const Employments = () => {
             ]} />
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        title="Detalle de Empleado"
+        open={viewModalOpen}
+        onCancel={() => setViewModalOpen(false)}
+        footer={[
+          <Button 
+            key="delete" 
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => {
+              setViewModalOpen(false);
+              handleDeleteItem(selectedItem.key);
+            }}
+          >
+            Eliminar
+          </Button>,
+          <Button key="close" onClick={() => setViewModalOpen(false)}>
+            Cerrar
+          </Button>,
+          <Button 
+            key="edit" 
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => {
+              setViewModalOpen(false);
+              handleEditItem(selectedItem);
+            }}
+          >
+            Editar
+          </Button>
+        ]}
+      >
+        {selectedItem && (
+          <Descriptions bordered column={1}>
+            <Descriptions.Item label="Nombre">{selectedItem.nombre}</Descriptions.Item>
+            <Descriptions.Item label="Puesto">{selectedItem.puesto}</Descriptions.Item>
+            <Descriptions.Item label="Email">{selectedItem.email}</Descriptions.Item>
+            <Descriptions.Item label="Estado">
+              <Tag color={selectedItem.estado === 'Activo' ? 'green' : selectedItem.estado === 'Vacaciones' ? 'blue' : 'red'}>
+                {selectedItem.estado}
+              </Tag>
+            </Descriptions.Item>
+          </Descriptions>
+        )}
       </Modal>
     </div>
   );

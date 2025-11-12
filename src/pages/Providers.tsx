@@ -1,20 +1,11 @@
-import { useState, useCallback } from 'react';
-import { Table, Typography, Button, Modal, Form, Input, Space, Row, Col } from 'antd';
-import type { ColumnsType } from 'antd/es/table';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { useState } from 'react';
+import { Table, Typography, Button, Modal, Form, Input, Space, Row, Col, Descriptions } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 
 const { Title, Paragraph } = Typography;
 
-interface ProviderItem {
-  key: string;
-  nombre: string;
-  contacto: string;
-  email: string;
-  rubro: string;
-}
-
 const Providers = () => {
-  const [data, setData] = useState<ProviderItem[]>([
+  const [data, setData] = useState([
     { key: '1', nombre: 'Distribuidora Tech', contacto: '+54 11 4567-8901', email: 'ventas@disttech.com', rubro: 'Computación' },
     { key: '2', nombre: 'Importaciones Global', contacto: '+54 11 4567-8902', email: 'info@impglobal.com', rubro: 'Electrónica' },
     { key: '3', nombre: 'Mayorista Central', contacto: '+54 11 4567-8903', email: 'contacto@mayorista.com', rubro: 'General' },
@@ -24,16 +15,23 @@ const Providers = () => {
   ]);
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [editingKey, setEditingKey] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null);
   const [form] = Form.useForm();
 
-  const handleAddItem = useCallback(() => {
+  const handleAddItem = () => {
     setEditingKey(null);
     form.resetFields();
     setModalOpen(true);
-  }, [form]);
+  };
 
-  const handleEditItem = useCallback((item: ProviderItem) => {
+  const handleViewItem = (item) => {
+    setSelectedItem(item);
+    setViewModalOpen(true);
+  };
+
+  const handleEditItem = (item) => {
     setEditingKey(item.key);
     form.setFieldsValue({
       nombre: item.nombre,
@@ -42,13 +40,23 @@ const Providers = () => {
       rubro: item.rubro,
     });
     setModalOpen(true);
-  }, [form]);
+  };
 
-  const handleDeleteItem = useCallback((key: string) => {
-    setData(data.filter(item => item.key !== key));
-  }, [data]);
+  const handleDeleteItem = (key) => {
+    Modal.confirm({
+      title: '¿Está seguro de eliminar este proveedor?',
+      icon: <ExclamationCircleOutlined />,
+      content: 'Esta acción no se puede deshacer.',
+      okText: 'Eliminar',
+      okType: 'danger',
+      cancelText: 'Cancelar',
+      onOk() {
+        setData(data.filter(item => item.key !== key));
+      },
+    });
+  };
 
-  const handleSaveItem = useCallback((values: any) => {
+  const handleSaveItem = (values) => {
     if (editingKey) {
       setData(data.map(item =>
         item.key === editingKey
@@ -60,9 +68,9 @@ const Providers = () => {
     }
     setModalOpen(false);
     form.resetFields();
-  }, [editingKey, data, form]);
+  };
 
-  const columns: ColumnsType<ProviderItem> = [
+  const columns = [
     {
       title: 'Nombre',
       dataIndex: 'nombre',
@@ -86,20 +94,26 @@ const Providers = () => {
     {
       title: 'Acciones',
       key: 'acciones',
-      render: (_: any, record: ProviderItem) => (
+      render: (_, record) => (
         <Space>
           <Button
             type="text"
             size="small"
             icon={<EditOutlined />}
-            onClick={() => handleEditItem(record)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEditItem(record);
+            }}
           />
           <Button
             type="text"
             size="small"
             danger
             icon={<DeleteOutlined />}
-            onClick={() => handleDeleteItem(record.key)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteItem(record.key);
+            }}
           />
         </Space>
       ),
@@ -131,6 +145,10 @@ const Providers = () => {
           dataSource={data}
           pagination={{ pageSize: 10 }}
           scroll={{ x: 800 }}
+          onRow={(record) => ({
+            onClick: () => handleViewItem(record),
+            style: { cursor: 'pointer' }
+          })}
         />
       </div>
 
@@ -174,6 +192,48 @@ const Providers = () => {
             <Input />
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        title="Detalle de Proveedor"
+        open={viewModalOpen}
+        onCancel={() => setViewModalOpen(false)}
+        footer={[
+          <Button 
+            key="delete" 
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => {
+              setViewModalOpen(false);
+              handleDeleteItem(selectedItem.key);
+            }}
+          >
+            Eliminar
+          </Button>,
+          <Button key="close" onClick={() => setViewModalOpen(false)}>
+            Cerrar
+          </Button>,
+          <Button 
+            key="edit" 
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => {
+              setViewModalOpen(false);
+              handleEditItem(selectedItem);
+            }}
+          >
+            Editar
+          </Button>
+        ]}
+      >
+        {selectedItem && (
+          <Descriptions bordered column={1}>
+            <Descriptions.Item label="Nombre">{selectedItem.nombre}</Descriptions.Item>
+            <Descriptions.Item label="Contacto">{selectedItem.contacto}</Descriptions.Item>
+            <Descriptions.Item label="Email">{selectedItem.email}</Descriptions.Item>
+            <Descriptions.Item label="Rubro">{selectedItem.rubro}</Descriptions.Item>
+          </Descriptions>
+        )}
       </Modal>
     </div>
   );

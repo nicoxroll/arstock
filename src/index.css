@@ -37,3 +37,13 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Efecto hover para las cards de grid */
+.ant-card:hover .card-hover-info {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.card-hover-info {
+  cursor: default;
+}

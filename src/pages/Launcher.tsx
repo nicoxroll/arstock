@@ -26,24 +26,24 @@ interface LauncherProps {
 
 const Launcher = ({ onNavigate }: LauncherProps) => {
   const launcherItems: LauncherItem[] = [
-    { key: '1', label: 'Overview', icon: <DashboardOutlined />, color: '#1890ff', onClick: () => onNavigate('1') },
-    { key: '2', label: 'Stock', icon: <InboxOutlined />, color: '#52c41a', onClick: () => onNavigate('2') },
-    { key: '3', label: 'Billing', icon: <FileTextOutlined />, color: '#faad14', onClick: () => onNavigate('3') },
-    { key: '4', label: 'Debts', icon: <CreditCardOutlined />, color: '#f5222d', onClick: () => onNavigate('4') },
-    { key: '5', label: 'Providers', icon: <TeamOutlined />, color: '#13c2c2', onClick: () => onNavigate('5') },
-    { key: '6', label: 'Stats', icon: <BarChartOutlined />, color: '#722ed1', onClick: () => onNavigate('6') },
-    { key: '7', label: 'Employments', icon: <UserOutlined />, color: '#eb2f96', onClick: () => onNavigate('7') },
-    { key: '8', label: 'Customers', icon: <ShoppingOutlined />, color: '#fa8c16', onClick: () => onNavigate('8') },
+    { key: '1', label: 'Resumen', icon: <DashboardOutlined />, color: '#1890ff', onClick: () => onNavigate('1') },
+    { key: '2', label: 'Inventario', icon: <InboxOutlined />, color: '#52c41a', onClick: () => onNavigate('2') },
+    { key: '3', label: 'Facturación', icon: <FileTextOutlined />, color: '#faad14', onClick: () => onNavigate('3') },
+    { key: '4', label: 'Deudas', icon: <CreditCardOutlined />, color: '#f5222d', onClick: () => onNavigate('4') },
+    { key: '5', label: 'Proveedores', icon: <TeamOutlined />, color: '#13c2c2', onClick: () => onNavigate('5') },
+    { key: '6', label: 'Estadísticas', icon: <BarChartOutlined />, color: '#722ed1', onClick: () => onNavigate('6') },
+    { key: '7', label: 'Empleados', icon: <UserOutlined />, color: '#eb2f96', onClick: () => onNavigate('7') },
+    { key: '8', label: 'Clientes', icon: <ShoppingOutlined />, color: '#fa8c16', onClick: () => onNavigate('8') },
   ];
 
   return (
     <div>
       <Breadcrumb style={{ marginBottom: 16 }}>
-        <Breadcrumb.Item>Dashboard</Breadcrumb.Item>
-        <Breadcrumb.Item>Launcher</Breadcrumb.Item>
+        <Breadcrumb.Item>Panel</Breadcrumb.Item>
+        <Breadcrumb.Item>Lanzador</Breadcrumb.Item>
       </Breadcrumb>
 
-      <Title level={2}>Launcher</Title>
+      <Title level={2}>Lanzador de Aplicaciones</Title>
 
       <Row gutter={[24, 24]} style={{ marginTop: 32 }}>
         {launcherItems.map((item) => (

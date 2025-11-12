@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Table, Typography, Tag, Button, Modal, Form, Input, InputNumber, Select, Space, Row, Col } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Table, Typography, Tag, Button, Modal, Form, Input, InputNumber, Select, Space, Row, Col, Descriptions } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 
 const { Title, Paragraph } = Typography;
 
@@ -15,13 +15,20 @@ const Billing = () => {
   ]);
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editingKey, setEditingKey] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null);
   const [form] = Form.useForm();
 
   const handleAddItem = () => {
     setEditingKey(null);
     form.resetFields();
     setModalOpen(true);
+  };
+
+  const handleViewItem = (item) => {
+    setSelectedItem(item);
+    setViewModalOpen(true);
   };
 
   const handleEditItem = (item) => {
@@ -37,7 +44,17 @@ const Billing = () => {
   };
 
   const handleDeleteItem = (key) => {
-    setData(data.filter(item => item.key !== key));
+    Modal.confirm({
+      title: '¿Está seguro de eliminar esta factura?',
+      icon: <ExclamationCircleOutlined />,
+      content: 'Esta acción no se puede deshacer.',
+      okText: 'Eliminar',
+      okType: 'danger',
+      cancelText: 'Cancelar',
+      onOk() {
+        setData(data.filter(item => item.key !== key));
+      },
+    });
   };
 
   const handleSaveItem = (values) => {
@@ -95,14 +112,20 @@ const Billing = () => {
             type="text"
             size="small"
             icon={<EditOutlined />}
-            onClick={() => handleEditItem(record)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEditItem(record);
+            }}
           />
           <Button
             type="text"
             size="small"
             danger
             icon={<DeleteOutlined />}
-            onClick={() => handleDeleteItem(record.key)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteItem(record.key);
+            }}
           />
         </Space>
       ),
@@ -134,6 +157,10 @@ const Billing = () => {
           dataSource={data}
           pagination={{ pageSize: 10 }}
           scroll={{ x: 800 }}
+          onRow={(record) => ({
+            onClick: () => handleViewItem(record),
+            style: { cursor: 'pointer' }
+          })}
         />
       </div>
 
@@ -188,6 +215,53 @@ const Billing = () => {
             ]} />
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        title="Detalle de Factura"
+        open={viewModalOpen}
+        onCancel={() => setViewModalOpen(false)}
+        footer={[
+          <Button 
+            key="delete" 
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => {
+              setViewModalOpen(false);
+              handleDeleteItem(selectedItem.key);
+            }}
+          >
+            Eliminar
+          </Button>,
+          <Button key="close" onClick={() => setViewModalOpen(false)}>
+            Cerrar
+          </Button>,
+          <Button 
+            key="edit" 
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => {
+              setViewModalOpen(false);
+              handleEditItem(selectedItem);
+            }}
+          >
+            Editar
+          </Button>
+        ]}
+      >
+        {selectedItem && (
+          <Descriptions bordered column={1}>
+            <Descriptions.Item label="ID">{selectedItem.id}</Descriptions.Item>
+            <Descriptions.Item label="Cliente">{selectedItem.cliente}</Descriptions.Item>
+            <Descriptions.Item label="Fecha">{selectedItem.fecha}</Descriptions.Item>
+            <Descriptions.Item label="Monto">${selectedItem.monto.toLocaleString()}</Descriptions.Item>
+            <Descriptions.Item label="Estado">
+              <Tag color={selectedItem.estado === 'Pagada' ? 'green' : selectedItem.estado === 'Pendiente' ? 'orange' : 'red'}>
+                {selectedItem.estado}
+              </Tag>
+            </Descriptions.Item>
+          </Descriptions>
+        )}
       </Modal>
     </div>
   );

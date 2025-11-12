@@ -33,21 +33,21 @@ const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
 
 const DashboardLayout = () => {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [selectedKey, setSelectedKey] = useState('1');
   const { username, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
 
   const menuItems = [
-    { key: '1', icon: <DashboardOutlined />, label: 'Overview' },
-    { key: '9', icon: <AppstoreOutlined />, label: 'Launcher' },
-    { key: '2', icon: <InboxOutlined />, label: 'Stock' },
-    { key: '3', icon: <FileTextOutlined />, label: 'Billing' },
-    { key: '4', icon: <CreditCardOutlined />, label: 'Debts' },
-    { key: '5', icon: <TeamOutlined />, label: 'Providers' },
-    { key: '6', icon: <BarChartOutlined />, label: 'Stats' },
-    { key: '7', icon: <UserOutlined />, label: 'Employments' },
-    { key: '8', icon: <ShoppingOutlined />, label: 'Customers' },
+    { key: '1', icon: <DashboardOutlined />, label: 'Resumen' },
+    { key: '9', icon: <AppstoreOutlined />, label: 'Lanzador' },
+    { key: '2', icon: <InboxOutlined />, label: 'Inventario' },
+    { key: '3', icon: <FileTextOutlined />, label: 'Facturación' },
+    { key: '4', icon: <CreditCardOutlined />, label: 'Deudas' },
+    { key: '5', icon: <TeamOutlined />, label: 'Proveedores' },
+    { key: '6', icon: <BarChartOutlined />, label: 'Estadísticas' },
+    { key: '7', icon: <UserOutlined />, label: 'Empleados' },
+    { key: '8', icon: <ShoppingOutlined />, label: 'Clientes' },
     { key: '10', icon: <UserOutlined />, label: 'Perfil' },
   ];
 

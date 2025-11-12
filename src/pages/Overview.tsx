@@ -63,8 +63,8 @@ const Overview = () => {
   return (
     <div style={{ animation: 'fadeIn 0.3s ease' }}>
       <Breadcrumb style={{ marginBottom: 16 }}>
-        <Breadcrumb.Item>Dashboard</Breadcrumb.Item>
-        <Breadcrumb.Item>Overview</Breadcrumb.Item>
+        <Breadcrumb.Item>Panel</Breadcrumb.Item>
+        <Breadcrumb.Item>Resumen</Breadcrumb.Item>
       </Breadcrumb>
 
       {/* Hero Banner */}
