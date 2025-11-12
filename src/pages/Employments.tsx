@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Table, Typography, Tag, Button, Modal, Form, Input, Select, Space } from 'antd';
+import { Table, Typography, Tag, Button, Modal, Form, Input, Select, Space, Row, Col } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 
@@ -113,23 +113,31 @@ const Employments = () => {
 
   return (
     <div>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+        <Col xs={24} sm={16}>
           <Title level={2} style={{ margin: 0 }}>Empleados</Title>
-          <Paragraph>
+          <Paragraph style={{ margin: 0 }}>
             Gestión del personal del local. Visualice información de contacto y estado laboral de cada empleado.
           </Paragraph>
-        </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAddItem}>
-          Nuevo Empleado
-        </Button>
+        </Col>
+        <Col xs={24} sm={8} style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+          <Button 
+            type="primary" 
+            icon={<PlusOutlined />} 
+            onClick={handleAddItem}
+          >
+            <span className="btn-text">Nuevo Empleado</span>
+          </Button>
+        </Col>
+      </Row>
+      <div className="fade-in-table">
+        <Table
+          columns={columns}
+          dataSource={data}
+          pagination={{ pageSize: 10 }}
+          scroll={{ x: 800 }}
+        />
       </div>
-      <Table
-        columns={columns}
-        dataSource={data}
-        pagination={{ pageSize: 10 }}
-        scroll={{ x: 800 }}
-      />
 
       <Modal
         title={editingKey ? 'Editar Empleado' : 'Nuevo Empleado'}

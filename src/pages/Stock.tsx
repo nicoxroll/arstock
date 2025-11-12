@@ -1,18 +1,48 @@
 import { useState } from 'react';
-import { Table, Typography, Tag, Button, Modal, Form, Input, InputNumber, Select, Space } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Table, Typography, Tag, Button, Modal, Form, Input, InputNumber, Select, Space, Image, Descriptions, Row, Col } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 
 const { Title } = Typography;
 
 const Stock = () => {
   const [data, setData] = useState([
-    { key: '1', producto: 'Laptop HP 15', sku: 'LAP-HP-001', cantidad: 45, estado: 'Disponible' },
-    { key: '2', producto: 'Mouse Logitech M185', sku: 'MOU-LOG-185', cantidad: 120, estado: 'Disponible' },
-    { key: '3', producto: 'Teclado Mecánico RGB', sku: 'TEC-RGB-001', cantidad: 8, estado: 'Bajo' },
-    { key: '4', producto: 'Monitor Samsung 27"', sku: 'MON-SAM-027', cantidad: 2, estado: 'Crítico' },
+    { 
+      key: '1', 
+      producto: 'Laptop HP 15', 
+      sku: 'LAP-HP-001', 
+      cantidad: 45, 
+      estado: 'Disponible',
+      imagen: 'https://images.pexels.com/photos/1006293/pexels-photo-1006293.jpeg?auto=compress&cs=tinysrgb&w=600'
+    },
+    { 
+      key: '2', 
+      producto: 'Mouse Logitech M185', 
+      sku: 'MOU-LOG-185', 
+      cantidad: 120, 
+      estado: 'Disponible',
+      imagen: 'https://images.pexels.com/photos/1334597/pexels-photo-1334597.jpeg?auto=compress&cs=tinysrgb&w=600'
+    },
+    { 
+      key: '3', 
+      producto: 'Teclado Mecánico RGB', 
+      sku: 'TEC-RGB-001', 
+      cantidad: 8, 
+      estado: 'Bajo',
+      imagen: 'https://images.pexels.com/photos/1334584/pexels-photo-1334584.jpeg?auto=compress&cs=tinysrgb&w=600'
+    },
+    { 
+      key: '4', 
+      producto: 'Monitor Samsung 27"', 
+      sku: 'MON-SAM-027', 
+      cantidad: 2, 
+      estado: 'Crítico',
+      imagen: 'https://images.pexels.com/photos/3394650/pexels-photo-3394650.jpeg?auto=compress&cs=tinysrgb&w=600'
+    },
   ]);
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
   const [editingKey, setEditingKey] = useState(null);
   const [form] = Form.useForm();
 
@@ -29,8 +59,14 @@ const Stock = () => {
       sku: item.sku,
       cantidad: item.cantidad,
       estado: item.estado,
+      imagen: item.imagen,
     });
     setModalOpen(true);
+  };
+
+  const handleViewItem = (item) => {
+    setSelectedItem(item);
+    setViewModalOpen(true);
   };
 
   const handleDeleteItem = (key) => {
@@ -119,9 +155,14 @@ const Stock = () => {
           <Button
             type="text"
             size="small"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewItem(record)}
+          />
+          <Button
+            type="text"
+            size="small"
             icon={<EditOutlined />}
             onClick={() => handleEditItem(record)}
-            style={{ transition: 'all 0.2s ease' }}
           />
           <Button
             type="text"
@@ -129,7 +170,6 @@ const Stock = () => {
             danger
             icon={<DeleteOutlined />}
             onClick={() => handleDeleteItem(record.key)}
-            style={{ transition: 'all 0.2s ease' }}
           />
         </Space>
       ),
@@ -138,19 +178,89 @@ const Stock = () => {
 
   return (
     <div>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Title level={2} style={{ margin: 0 }}>Stock</Title>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAddItem}>
-          Agregar Producto
-        </Button>
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+        <Col xs={24} sm={12}>
+          <Title level={2} style={{ margin: 0 }}>Stock</Title>
+        </Col>
+        <Col xs={24} sm={12} style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+          <Button 
+            type="primary" 
+            icon={<PlusOutlined />} 
+            onClick={handleAddItem}
+          >
+            <span className="btn-text">Agregar Producto</span>
+          </Button>
+        </Col>
+      </Row>
+      <div className="fade-in-table">
+        <Table
+          columns={columns}
+          dataSource={data}
+          pagination={{ pageSize: 10 }}
+          scroll={{ x: 800 }}
+          onRow={(record) => ({
+            onClick: () => handleViewItem(record),
+            style: { cursor: 'pointer' }
+          })}
+        />
       </div>
-      <Table
-        columns={columns}
-        dataSource={data}
-        pagination={{ pageSize: 10 }}
-        scroll={{ x: 800 }}
-      />
 
+      {/* Modal de Vista */}
+      <Modal
+        title="Detalle del Producto"
+        open={viewModalOpen}
+        onCancel={() => setViewModalOpen(false)}
+        footer={[
+          <Button key="close" onClick={() => setViewModalOpen(false)}>
+            Cerrar
+          </Button>,
+          <Button 
+            key="edit" 
+            type="primary" 
+            onClick={() => {
+              setViewModalOpen(false);
+              handleEditItem(selectedItem);
+            }}
+          >
+            Editar
+          </Button>
+        ]}
+        width={600}
+      >
+        {selectedItem && (
+          <div>
+            {selectedItem.imagen && (
+              <div style={{ marginBottom: 16, textAlign: 'center' }}>
+                <Image 
+                  src={selectedItem.imagen} 
+                  alt={selectedItem.producto}
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: 300,
+                    objectFit: 'contain',
+                    borderRadius: 8
+                  }}
+                />
+              </div>
+            )}
+            <Descriptions bordered column={1}>
+              <Descriptions.Item label="Producto">{selectedItem.producto}</Descriptions.Item>
+              <Descriptions.Item label="SKU">{selectedItem.sku}</Descriptions.Item>
+              <Descriptions.Item label="Cantidad">{selectedItem.cantidad}</Descriptions.Item>
+              <Descriptions.Item label="Estado">
+                <Tag color={
+                  selectedItem.estado === 'Disponible' ? 'green' : 
+                  selectedItem.estado === 'Bajo' ? 'orange' : 'red'
+                }>
+                  {selectedItem.estado}
+                </Tag>
+              </Descriptions.Item>
+            </Descriptions>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal de Edición/Agregar */}
       <Modal
         title={editingKey ? 'Editar Producto' : 'Agregar Producto'}
         open={modalOpen}

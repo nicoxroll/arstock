@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Table, Typography, Button, Modal, Form, Input, InputNumber, Space } from 'antd';
+import { Table, Typography, Button, Modal, Form, Input, InputNumber, Space, Row, Col } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 
@@ -112,23 +112,31 @@ const Customers = () => {
 
   return (
     <div>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+        <Col xs={24} sm={16}>
           <Title level={2} style={{ margin: 0 }}>Clientes</Title>
-          <Paragraph>
+          <Paragraph style={{ margin: 0 }}>
             Base de datos de clientes. Acceda al historial de compras y valor total de cada cliente.
           </Paragraph>
-        </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAddItem}>
-          Nuevo Cliente
-        </Button>
+        </Col>
+        <Col xs={24} sm={8} style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+          <Button 
+            type="primary" 
+            icon={<PlusOutlined />} 
+            onClick={handleAddItem}
+          >
+            <span className="btn-text">Nuevo Cliente</span>
+          </Button>
+        </Col>
+      </Row>
+      <div className="fade-in-table">
+        <Table
+          columns={columns}
+          dataSource={data}
+          pagination={{ pageSize: 10 }}
+          scroll={{ x: 800 }}
+        />
       </div>
-      <Table
-        columns={columns}
-        dataSource={data}
-        pagination={{ pageSize: 10 }}
-        scroll={{ x: 800 }}
-      />
 
       <Modal
         title={editingKey ? 'Editar Cliente' : 'Nuevo Cliente'}

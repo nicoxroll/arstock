@@ -68,7 +68,7 @@ const DashboardLayout = () => {
   };
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout style={{ minHeight: '100vh', height: '100vh', overflow: 'hidden' }}>
       <Sider
         collapsible
         collapsed={collapsed}
@@ -108,7 +108,12 @@ const DashboardLayout = () => {
         />
       </Sider>
 
-      <Layout style={{ marginLeft: collapsed ? 80 : 250, transition: 'margin-left 0.2s ease' }}>
+      <Layout style={{ 
+        marginLeft: collapsed ? 80 : 250, 
+        transition: 'margin-left 0.2s ease',
+        height: '100vh',
+        overflow: 'hidden'
+      }}>
         <Header
           style={{
             padding: '0 24px',
@@ -156,7 +161,7 @@ const DashboardLayout = () => {
               icon={<LogoutOutlined />}
               onClick={logout}
             >
-              Salir
+              
             </Button>
           </div>
         </Header>
@@ -164,6 +169,8 @@ const DashboardLayout = () => {
         <Content style={{ 
           margin: '24px', 
           minHeight: 280,
+          overflow: 'auto',
+          height: 'calc(100vh - 64px - 48px)',
         }}>
           {renderContent()}
         </Content>
