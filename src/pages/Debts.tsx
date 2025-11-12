@@ -1,19 +1,59 @@
-import { Table, Typography, Tag } from 'antd';
-import type { ColumnsType } from 'antd/es/table';
+import { useState } from 'react';
+import { Table, Typography, Tag, Button, Modal, Form, Input, InputNumber, Select, Space } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 
 const { Title, Paragraph } = Typography;
 
-interface DebtItem {
-  key: string;
-  proveedor: string;
-  factura: string;
-  vencimiento: string;
-  monto: number;
-  estado: string;
-}
-
 const Debts = () => {
-  const columns: ColumnsType<DebtItem> = [
+  const [data, setData] = useState([
+    { key: '1', proveedor: 'Distribuidora Tech', factura: 'PROV-001', vencimiento: '2024-02-15', monto: 28000, estado: 'Al día' },
+    { key: '2', proveedor: 'Importaciones Global', factura: 'PROV-002', vencimiento: '2024-02-10', monto: 45000, estado: 'Próximo' },
+    { key: '3', proveedor: 'Mayorista Central', factura: 'PROV-003', vencimiento: '2024-01-30', monto: 15500, estado: 'Vencida' },
+    { key: '4', proveedor: 'Electrónica SA', factura: 'PROV-004', vencimiento: '2024-02-20', monto: 32000, estado: 'Al día' },
+    { key: '5', proveedor: 'Tech Supplies', factura: 'PROV-005', vencimiento: '2024-02-08', monto: 19800, estado: 'Próximo' },
+  ]);
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingKey, setEditingKey] = useState(null);
+  const [form] = Form.useForm();
+
+  const handleAddItem = () => {
+    setEditingKey(null);
+    form.resetFields();
+    setModalOpen(true);
+  };
+
+  const handleEditItem = (item) => {
+    setEditingKey(item.key);
+    form.setFieldsValue({
+      proveedor: item.proveedor,
+      factura: item.factura,
+      vencimiento: item.vencimiento,
+      monto: item.monto,
+      estado: item.estado,
+    });
+    setModalOpen(true);
+  };
+
+  const handleDeleteItem = (key) => {
+    setData(data.filter(item => item.key !== key));
+  };
+
+  const handleSaveItem = (values) => {
+    if (editingKey) {
+      setData(data.map(item =>
+        item.key === editingKey
+          ? { ...item, ...values }
+          : item
+      ));
+    } else {
+      setData([...data, { key: Date.now().toString(), ...values }]);
+    }
+    setModalOpen(false);
+    form.resetFields();
+  };
+
+  const columns = [
     {
       title: 'Proveedor',
       dataIndex: 'proveedor',
@@ -45,29 +85,101 @@ const Debts = () => {
         return <Tag color={color}>{estado}</Tag>;
       },
     },
-  ];
-
-  const data: DebtItem[] = [
-    { key: '1', proveedor: 'Distribuidora Tech', factura: 'PROV-001', vencimiento: '2024-02-15', monto: 28000, estado: 'Al día' },
-    { key: '2', proveedor: 'Importaciones Global', factura: 'PROV-002', vencimiento: '2024-02-10', monto: 45000, estado: 'Próximo' },
-    { key: '3', proveedor: 'Mayorista Central', factura: 'PROV-003', vencimiento: '2024-01-30', monto: 15500, estado: 'Vencida' },
-    { key: '4', proveedor: 'Electrónica SA', factura: 'PROV-004', vencimiento: '2024-02-20', monto: 32000, estado: 'Al día' },
-    { key: '5', proveedor: 'Tech Supplies', factura: 'PROV-005', vencimiento: '2024-02-08', monto: 19800, estado: 'Próximo' },
+    {
+      title: 'Acciones',
+      key: 'acciones',
+      render: (_: any, record: DebtItem) => (
+        <Space>
+          <Button
+            type="text"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => handleEditItem(record)}
+          />
+          <Button
+            type="text"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleDeleteItem(record.key)}
+          />
+        </Space>
+      ),
+    },
   ];
 
   return (
     <div>
-      <Title level={2}>Cuentas por Pagar</Title>
-      <Paragraph>
-        Control de deudas con proveedores. Mantenga un seguimiento de las fechas de vencimiento y estados de pago.
-      </Paragraph>
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <Title level={2} style={{ margin: 0 }}>Cuentas por Pagar</Title>
+          <Paragraph>
+            Control de deudas con proveedores. Mantenga un seguimiento de las fechas de vencimiento y estados de pago.
+          </Paragraph>
+        </div>
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleAddItem}>
+          Nueva Deuda
+        </Button>
+      </div>
       <Table
         columns={columns}
         dataSource={data}
         pagination={{ pageSize: 10 }}
         scroll={{ x: 800 }}
-        style={{ marginTop: 24 }}
       />
+
+      <Modal
+        title={editingKey ? 'Editar Deuda' : 'Nueva Deuda'}
+        open={modalOpen}
+        onCancel={() => setModalOpen(false)}
+        onOk={() => form.submit()}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSaveItem}
+        >
+          <Form.Item
+            name="proveedor"
+            label="Proveedor"
+            rules={[{ required: true, message: 'Por favor ingrese el proveedor' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="factura"
+            label="Factura"
+            rules={[{ required: true, message: 'Por favor ingrese el número de factura' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="vencimiento"
+            label="Vencimiento"
+            rules={[{ required: true, message: 'Por favor ingrese la fecha' }]}
+          >
+            <Input type="date" />
+          </Form.Item>
+          <Form.Item
+            name="monto"
+            label="Monto"
+            rules={[{ required: true, message: 'Por favor ingrese el monto' }]}
+          >
+            <InputNumber min={0} />
+          </Form.Item>
+          <Form.Item
+            name="estado"
+            label="Estado"
+            rules={[{ required: true, message: 'Por favor seleccione el estado' }]}
+          >
+            <Select options={[
+              { label: 'Al día', value: 'Al día' },
+              { label: 'Próximo', value: 'Próximo' },
+              { label: 'Vencida', value: 'Vencida' },
+            ]} />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

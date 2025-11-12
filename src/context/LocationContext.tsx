@@ -9,6 +9,7 @@ interface LocationContextType {
   selectedLocation: Location;
   setSelectedLocation: (location: Location) => void;
   locations: Location[];
+  setLocations: (locations: Location[]) => void;
 }
 
 const LocationContext = createContext<LocationContextType | undefined>(undefined);
@@ -21,9 +22,10 @@ const mockLocations: Location[] = [
 
 export const LocationProvider = ({ children }: { children: ReactNode }) => {
   const [selectedLocation, setSelectedLocation] = useState<Location>(mockLocations[0]);
+  const [locations, setLocations] = useState<Location[]>(mockLocations);
 
   return (
-    <LocationContext.Provider value={{ selectedLocation, setSelectedLocation, locations: mockLocations }}>
+    <LocationContext.Provider value={{ selectedLocation, setSelectedLocation, locations, setLocations }}>
       {children}
     </LocationContext.Provider>
   );

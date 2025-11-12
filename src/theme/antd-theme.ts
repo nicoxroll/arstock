@@ -10,6 +10,7 @@ export const lightTheme: ThemeConfig = {
     Layout: {
       colorBgHeader: '#ffffff',
       colorBgBody: '#f5f5f5',
+      siderBg: '#ffffff',
     },
   },
 };
@@ -24,6 +25,12 @@ export const darkTheme: ThemeConfig = {
     Layout: {
       colorBgHeader: '#141414',
       colorBgBody: '#0a0a0a',
+      siderBg: '#000000',
+    },
+    Menu: {
+      colorBgElevated: '#000000',
+      colorItemBg: '#000000',
     },
   },
 };
+

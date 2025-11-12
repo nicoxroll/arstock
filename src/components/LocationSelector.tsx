@@ -1,16 +1,37 @@
 import { useState } from 'react';
-import { Button, Modal, List } from 'antd';
-import { EnvironmentOutlined } from '@ant-design/icons';
+import { Button, Modal, List, Input, Form, Space } from 'antd';
+import { EnvironmentOutlined, SearchOutlined, PlusOutlined } from '@ant-design/icons';
 import { useLocation } from '../context/LocationContext';
 
 const LocationSelector = () => {
   const [modalOpen, setModalOpen] = useState(false);
-  const { selectedLocation, setSelectedLocation, locations } = useLocation();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [addMode, setAddMode] = useState(false);
+  const [form] = Form.useForm();
+  const { selectedLocation, setSelectedLocation, locations, setLocations } = useLocation();
 
   const handleLocationChange = (location: { id: string; name: string }) => {
     setSelectedLocation(location);
     setModalOpen(false);
+    setSearchTerm('');
   };
+
+  const handleAddLocation = (values: any) => {
+    const newLocation = {
+      id: Date.now().toString(),
+      name: values.newLocationName
+    };
+    setLocations([...locations, newLocation]);
+    setSelectedLocation(newLocation);
+    setAddMode(false);
+    setModalOpen(false);
+    form.resetFields();
+    setSearchTerm('');
+  };
+
+  const filteredLocations = locations.filter(location =>
+    location.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <>
@@ -35,27 +56,75 @@ const LocationSelector = () => {
       <Modal
         title="Seleccionar Local"
         open={modalOpen}
-        onCancel={() => setModalOpen(false)}
+        onCancel={() => {
+          setModalOpen(false);
+          setSearchTerm('');
+          setAddMode(false);
+          form.resetFields();
+        }}
         footer={null}
       >
-        <List
-          dataSource={locations}
-          renderItem={(location) => (
-            <List.Item
-              onClick={() => handleLocationChange(location)}
-              style={{
-                cursor: 'pointer',
-                transition: 'background-color 0.3s'
-              }}
-              className="location-list-item"
-            >
-              <List.Item.Meta
-                avatar={<EnvironmentOutlined />}
-                title={location.name}
+        {!addMode ? (
+          <>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+              <Input
+                placeholder="Buscar local..."
+                prefix={<SearchOutlined />}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
-            </List.Item>
-          )}
-        />
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => setAddMode(true)}
+                title="Agregar nuevo local"
+              />
+            </div>
+            <List
+              dataSource={filteredLocations}
+              renderItem={(location) => (
+                <List.Item
+                  onClick={() => handleLocationChange(location)}
+                  style={{
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  className="location-list-item"
+                >
+                  <List.Item.Meta
+                    avatar={<EnvironmentOutlined />}
+                    title={location.name}
+                  />
+                </List.Item>
+              )}
+            />
+          </>
+        ) : (
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={handleAddLocation}
+          >
+            <Form.Item
+              name="newLocationName"
+              label="Nombre del Local"
+              rules={[{ required: true, message: 'Por favor ingrese el nombre del local' }]}
+            >
+              <Input placeholder="Ej: Local Centro, Sucursal Norte..." />
+            </Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit">
+                Crear Local
+              </Button>
+              <Button onClick={() => {
+                setAddMode(false);
+                form.resetFields();
+              }}>
+                Cancelar
+              </Button>
+            </Space>
+          </Form>
+        )}
       </Modal>
     </>
   );
